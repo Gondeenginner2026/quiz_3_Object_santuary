@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estudo: Objectos do Santuário</title>
+    <style>
+        :root { 
+            --primary: #8e44ad; 
+            --accent: #f1c40f; 
+            --success: #27ae60; 
+            --error: #c0392b; 
+            --bg: #121212;
+            --card: #ffffff;
+        }
+
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            background: var(--bg); 
+            display: flex; 
+            flex-direction: column;
+            align-items: center; 
+            min-height: 100vh; 
+            margin: 0; 
+            padding: 20px;
+            color: #333;
+        }
+
+        #quiz-container { 
+            width: 100%; 
+            max-width: 550px; 
+            background: var(--card); 
+            padding: 30px; 
+            border-radius: 20px; 
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5); 
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        .step { display: none; animation: fadeIn 0.4s ease-in-out; }
+        .active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        h2 { color: var(--primary); margin-bottom: 20px; font-size: 1.3em; }
+        .options-grid { display: flex; flex-direction: column; gap: 10px; margin: 20px 0; }
+
+        .opt-btn {
+            padding: 14px;
+            border: 2px solid #eee;
+            border-radius: 10px;
+            background: white;
+            cursor: pointer;
+            font-size: 15px;
+            transition: 0.2s;
+            text-align: left;
+        }
+
+        .correct-blink { background-color: var(--success) !important; color: white !important; border-color: #1e8449 !important; }
+        .error-blink { background-color: var(--error) !important; color: white !important; border-color: #922b21 !important; }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #ddd;
+            font-size: 16px;
+            box-sizing: border-box;
+            margin-bottom: 15px;
+        }
+
+        .progress-bar { height: 6px; background: #eee; border-radius: 3px; margin-bottom: 25px; overflow: hidden; }
+        #progress-fill { height: 100%; background: var(--primary); width: 0%; transition: width 0.4s; }
+
+        .result-box { padding: 15px; background: #f4f4f4; border-radius: 10px; margin-top: 15px; text-align: left; font-size: 0.9em; border-left: 5px solid var(--primary); }
+        .main-btn { background: var(--primary); color:white; padding:15px; width:100%; border-radius:10px; border:none; cursor:pointer; font-weight:bold; font-size: 16px; margin-top: 10px; }
+
+        /* Área Admin */
+        #admin-area {
+            width: 100%;
+            max-width: 900px;
+            margin-top: 40px;
+            background: #222;
+            padding: 20px;
+            border-radius: 15px;
+            color: white;
+            display: none;
+        }
+
+        .admin-toggle-btn {
+            margin-top: 30px;
+            background: #444;
+            color: #ccc;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; background: #333; color: white; }
+        th, td { border: 1px solid #444; padding: 10px; text-align: left; font-size: 13px; }
+        th { background: #444; color: var(--accent); }
+        .badge-err { color: #ff7675; }
+        .badge-ok { color: #55efc4; }
+    </style>
+</head>
+<body>
+
+<div id="quiz-container">
+    <div class="progress-bar"><div id="progress-fill"></div></div>
+
+    <div id="step-intro" class="step active">
+        <h2 style="color: var(--primary)">O Santuário Celestial</h2>
+        <p>Estudo Bíblico: O Caminho da Salvação</p>
+        <input type="text" id="user-name" placeholder="Digite seu nome completo">
+        <button class="main-btn" onclick="startQuiz()">INICIAR ESTUDO</button>
+    </div>
+
+    <div id="question-area"></div>
+
+    <div id="step-finish" class="step">
+        <h2 style="color: var(--success)">PARABÉNS POR TERMINAR!</h2>
+        <blockquote style="font-style: italic; background: #f9f9f9; padding: 15px; border-radius: 10px; color: #555;">
+            "Lâmpada para os meus pés é a tua palavra e luz para o meu caminho."<br>
+            <strong>(Salmos 119:105)</strong>
+        </blockquote>
+        <div class="result-box" id="final-summary"></div>
+        <button class="main-btn" onclick="location.reload()">RECOMEÇAR</button>
+    </div>
+</div>
+
+<button class="admin-toggle-btn" onclick="checkAdminPass()">Painel Administrativo (Pastor Gonde)</button>
+
+<div id="admin-area">
+    <h3 style="color: var(--accent); margin-top: 0;">Banco de Dados de Estudantes</h3>
+    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+        <button onclick="exportData()" style="background: #27ae60; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-weight: bold;">💾 Exportar Backup (.txt)</button>
+        <button onclick="clearDatabase()" style="background: #c0392b; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer;">🗑️ Limpar Banco</button>
+    </div>
+    <div style="overflow-x: auto;">
+        <table id="admin-table">
+            <thead>
+                <tr>
+                    <th>Data</th>
+                    <th>Estudante</th>
+                    <th>Acertos</th>
+                    <th>Relatório Detalhado</th>
+                </tr>
+            </thead>
+            <tbody id="admin-tbody"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    const ADMIN_PASS = "GondeBiblia2026";
+
+    const quizData = [
+        { q: "As cerimônias do Antigo Testamento eram sombras de quem?", opts: ["Dos anjos", "De Moisés", "De Jesus Cristo e Seu sacrifício"], ans: 2 },
+        { q: "Quem eram os sacerdotes escolhidos por Deus na linhagem de Arão?", opts: ["Membros da tribo de Levi", "Membros da tribo de Judá", "Qualquer israelita"], ans: 0 },
+        { q: "Quais são os 3 compartimentos que formavam o Santuário?", opts: ["Céu, Terra e Mar", "Pátio, Lugar Santo e Lugar Santíssimo", "Altar, Pia e Arca"], ans: 1 },
+        { q: "O Altar de Sacrifício no Pátio representava:", opts: ["A Cruz de Cristo", "A Ceia do Senhor", "A Lei de Deus"], ans: 0 },
+        { q: "A Pia (Lavatório) simbolizava qual processo cristão?", opts: ["A Santa Ceia", "Purificação e o Batismo", "A leitura da Bíblia"], ans: 1 },
+        { q: "A Mesa dos Pães da Proposição representa Jesus como nosso sustento e:", opts: ["Nossos dízimos", "A Palavra de Deus (Bíblia)", "A música sacra"], ans: 1 },
+        { q: "O Candelabro com suas luzes acesas representa:", opts: ["Jesus como a Luz do Mundo", "As estrelas do céu", "O fogo do Espírito"], ans: 0 },
+        { q: "O Altar de Incenso representa:", opts: ["O perfume das flores", "As orações de Cristo intercedendo por nós", "O julgamento final"], ans: 1 },
+        { q: "Dentro da Arca da Aliança, os 10 Mandamentos simbolizam:", opts: ["Leis abolidas", "A base do governo de Deus e Sua lei eterna", "Conselhos humanos"], ans: 1 },
+        { q: "O pote com Maná dentro da Arca simbolizava a provisão e:", opts: ["A mensagem de saúde", "A riqueza material", "A história de Israel"], ans: 0 },
+        { q: "Como seguidores de Cristo, o que devemos ser para o mundo?", opts: ["Apenas espectadores", "Luz para o mundo e guardadores da Lei", "Críticos ferrenhos"], ans: 1 },
+        { q: "Como cuidamos do corpo, que é o templo do Espírito?", opts: ["Ignorando a saúde", "Cuidando da saúde e dando frutos espirituais", "Apenas orando"], ans: 1 }
+    ];
+
+    let currentStep = 0, score = 0, userName = "", userReport = [];
+
+    function startQuiz() {
+        userName = document.getElementById('user-name').value;
+        if(!userName.trim()) return alert("Por favor, digite seu nome.");
+        document.getElementById('step-intro').classList.remove('active');
+        showQuestion();
+    }
+
+    function showQuestion() {
+        const area = document.getElementById('question-area');
+        const item = quizData[currentStep];
+        document.getElementById('progress-fill').style.width = (currentStep / quizData.length) * 100 + "%";
+
+        area.innerHTML = `
+            <div class="step active">
+                <p><small>Pergunta ${currentStep + 1} de ${quizData.length}</small></p>
+                <h2 style="color: var(--primary)">${item.q}</h2>
+                <div class="options-grid">
+                    ${item.opts.map((opt, i) => `<button class="opt-btn" onclick="checkAnswer(this, ${i})">${opt}</button>`).join('')}
+                </div>
+            </div>`;
+    }
+
+    function checkAnswer(btn, idx) {
+        const correctIdx = quizData[currentStep].ans;
+        document.querySelectorAll('.opt-btn').forEach(b => b.disabled = true);
+
+        if(idx === correctIdx) {
+            btn.classList.add('correct-blink');
+            score++;
+            userReport.push(`<span class="badge-ok">✅ Q${currentStep+1} OK</span>`);
+        } else {
+            btn.classList.add('error-blink');
+            document.querySelectorAll('.opt-btn')[correctIdx].classList.add('correct-blink');
+            userReport.push(`<span class="badge-err">❌ Q${currentStep+1} ERRO</span>`);
+        }
+
+        setTimeout(() => {
+            currentStep++;
+            if(currentStep < quizData.length) showQuestion();
+            else finishQuiz();
+        }, 1500);
+    }
+
+    function finishQuiz() {
+        document.getElementById('question-area').innerHTML = "";
+        document.getElementById('step-finish').classList.add('active');
+        document.getElementById('progress-fill').style.width = "100%";
+
+        document.getElementById('final-summary').innerHTML = `
+            <strong>Estudante:</strong> ${userName}<br>
+            <strong>Resultado Final:</strong> ${score} de ${quizData.length} acertos.<br><br>
+            <strong>Seu Desempenho:</strong><br>${userReport.join(' | ')}`;
+
+        let db = JSON.parse(localStorage.getItem('db_santuario_local') || '[]');
+        db.push({ nome: userName, acertos: `${score}/${quizData.length}`, data: new Date().toLocaleString('pt-BR'), detalhes: userReport.join(' ') });
+        localStorage.setItem('db_santuario_local', JSON.stringify(db));
+        updateAdminTable();
+    }
+
+    function checkAdminPass() {
+        if (prompt("Digite a senha do administrador:") === ADMIN_PASS) {
+            document.getElementById('admin-area').style.display = "block";
+            updateAdminTable();
+            window.scrollTo(0, document.body.scrollHeight);
+        } else alert("Senha incorreta!");
+    }
+
+    function updateAdminTable() {
+        const db = JSON.parse(localStorage.getItem('db_santuario_local') || '[]');
+        const tbody = document.getElementById('admin-tbody');
+        tbody.innerHTML = db.reverse().map(e => `<tr><td>${e.data}</td><td><strong>${e.nome}</strong></td><td>${e.acertos}</td><td>${e.detalhes}</td></tr>`).join('');
+    }
+
+    function exportData() {
+        const db = JSON.parse(localStorage.getItem('db_santuario_local') || '[]');
+        if (db.length === 0) return alert("Sem dados.");
+        let txt = "RELATÓRIO SANTUÁRIO\n\n" + db.map(e => `Data: ${e.data}\nNome: ${e.nome}\nNota: ${e.acertos}\nRelatório: ${e.detalhes.replace(/<[^>]*>?/gm, '')}\n---`).join('\n\n');
+        const blob = new Blob([txt], { type: 'text/plain' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `backup_estudantes_${new Date().toLocaleDateString()}.txt`;
+        a.click();
+    }
+
+    function clearDatabase() {
+        if(confirm("Apagar todos os registros deste computador?")) {
+            localStorage.removeItem('db_santuario_local');
+            updateAdminTable();
+        }
+    }
+</script>
+</body>
+</html>
